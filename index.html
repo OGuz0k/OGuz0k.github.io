@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script>
+        var time = 0
+        var lon = 47.7
+        var lat = 46
+        var sunAzimuth = 0
+        var sunAltitude = 0
+        var moonAzimuth = 0
+        var moonAltitude = 0
+        var moonPhase = 0
+        var moonDate = 0
+        var moonTime = 0
+        var currentBp = {
+            p: time.night, // для всех полей
+            ca: "#ffffff",
+            cb: "#000000"
+        }
+        var prevbp = {
+            p: time.night,
+            ca: "#ffffff",
+            cb: "#000000"
+        }
+        var bpi = 0
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.2/lib/p5.min.js"></script>
+    <script src="https://unpkg.com/p5.fillgradient"></script>
+    <script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
+    <script src="draw.js"></script>
+    <link rel="stylesheet" href="./reset.css">
+    <style>
+        body {
+            overflow: hidden;
+        }
+
+        .C {
+            max-width: fit-content;
+            /* margin: 0 auto; */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            position: fixed;
+            inset: 0;
+            width: fit-content;
+            height: fit-content;
+            margin: auto;
+            gap: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="C">
+        <canvas id="screen" width="800px" height="600px"></canvas>
+        <input type="date" id="moonDate" name="trip-start" />
+        <div>
+            <p id="sada">huoi</p>
+            <p id="MR">huoi</p>
+        </div>
+        <input id="pi_input" type="range" min="0" max="1" step="any" />
+    </div>
+</body>
+<script>
+    function ilerp(x, t0, t1) {
+        return (x - t0) / (t1 - t0)
+    }
+    // Функция обновления всех переменных по вводу
+    function updateMoon() {
+        m = ""
+        l = Math.round(moonPhase * 8)
+        switch (l) {
+            case 8:
+            case 0:
+                m = "Новолуние"
+                break
+            case 1:
+                m = "Молодая Луна"
+                break
+            case 2:
+                m = "Первая Четверть"
+                break
+            case 3:
+                m = "Растущая Луна"
+                break
+            case 4:
+                m = "Полнолуние"
+                break
+            case 5:
+                m = "Убывающая Луна"
+                break
+            case 6:
+                m = "Последняя Четверть"
+                break
+            case 7:
+                m = "Старая Луна"
+                break
+        }
+
+        document.querySelector("#sada").textContent = m
+        document.querySelector("#MR").textContent = moonTime.getHours().toString() + ":" + (moonTime.getMinutes() + 100).toString().substring(1)
+
+        var t = new Date(moonDate)
+        t.setHours(moonTime.getHours()) //<--сеттер изменяет поле объекта
+        t.setMinutes(moonTime.getMinutes())
+
+        var liop = SunCalc.getMoonPosition(t, lon, lat)
+        moonAltitude = liop.altitude
+        moonAzimuth = -(liop.azimuth + Math.PI / 2)
+
+
+        var lkjh = SunCalc.getPosition(t, lon, lat)
+        sunAltitude = lkjh.altitude
+        sunAzimuth = -(lkjh.azimuth + Math.PI / 2)
+
+        time = SunCalc.getTimes(t, lon, lat)
+        //debugger
+        var t0 = moonDate
+        var t1 = t0 + 86400 * 1000
+        function conv(x) {
+            return (x.getTime() - t0) / (t1 - t0)
+        }
+        time.sunrise = conv(time.sunrise)
+        time.sunriseEnd = conv(time.sunriseEnd)
+        time.goldenHourEnd = conv(time.goldenHourEnd)
+        time.solarNoon = conv(time.solarNoon)
+        time.goldenHour = conv(time.goldenHour)
+        time.sunsetStart = conv(time.sunsetStart)
+        time.sunset = conv(time.sunset)
+        time.dusk = conv(time.dusk)
+        time.nauticalDusk = conv(time.nauticalDusk)
+        time.night = conv(time.night)
+        time.nadir = conv(time.nadir)
+        time.nightEnd = conv(time.nightEnd)
+        time.nauticalDawn = conv(time.nauticalDawn)
+        time.dawn = conv(time.dawn)
+
+        var breakpoints = [{
+            p: 0, // с 0 всегда начинается ночь
+            ca: "#000000", // верх
+            cb: "#16152d" // низ
+        }, {
+            p: time.night, // для всех полей
+            ca: "#000000", // верх
+            cb: "#16152d" // низ
+        }, {
+            p: time.nightEnd,
+            ca: "#16152d",
+            cb: "#16152d"
+        }, {
+            p: time.dawn,
+            ca: "#16152d", // верх
+            cb: "#003ebd" // низ
+        }, {
+            p: time.sunrise,
+            ca: "#9a7b00", // верх
+            cb: "#d0a700" // низ
+        }, {
+            p: time.sunriseEnd,
+            ca: "#9a7b00", // верх
+            cb: "#d0a700" // низ
+        }, {
+            p: time.goldenHourEnd,
+            ca: "#f7c600", // верх
+            cb: "#49adff" // низ
+        }, {
+            p: time.solarNoon,
+            ca: "#49adff", // верх
+            cb: "#89c1ff" // низ
+        }, {
+            p: time.goldenHour,
+            ca: "#49adff", // верх
+            cb: "#ffd14b" // низ
+        }, {
+            p: time.sunsetStart,
+            ca: "#003ebd", // верх
+            cb: "#9a7b00" // низ
+        }, {
+            p: time.sunset,
+            ca: "#003ebd", // верх
+            cb: "#9a7b00" // низ
+        }, {
+            p: time.dusk,
+            ca: "#16152d", // верх
+            cb: "#003ebd" // низ
+        }
+        ]
+
+        var normalTime = moonTime.getTime() / 1000 / 86400
+        breakpoints.sort((b, a) => a.p - b.p)
+        for (var bp of breakpoints) {
+            if (normalTime > bp.p) {
+                currentBp = bp
+                break
+            }
+            prevbp = bp
+        }
+        bpi = ilerp(normalTime, prevbp.p, currentBp.p)
+
+        // в draw
+
+        // рисуем градиент, см в p5js.org
+
+
+    }
+    // Обработчик ползунка (обрати внимание на #pi_input тут и id="pi_input" в HTML ползунка)
+    document.querySelector("#pi_input").addEventListener("input", (event) => {
+        //moonAltitude = event.target.value * 3.1415
+        var erty = new Date(event.target.value * 86400 * 1000)
+        erty.setHours(erty.getHours() - 4)
+        moonTime = erty
+        updateMoon()
+    });
+    // Обработчик поля ввода даты
+    document.querySelector("#moonDate").addEventListener("input", (event) => {
+        moonDate = Date.parse(event.target.value)
+        var plpl = SunCalc.getMoonIllumination(moonDate)
+        moonPhase = plpl.phase
+        updateMoon()
+    });
+
+</script>
+
+</html>
